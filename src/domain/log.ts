@@ -1,7 +1,7 @@
 import * as pg from "psychopiggy";
 import { generate } from "../utils/random";
 
-export type CreateLogResult =
+export type CreateResourceResult =
   | {
       created: false;
       reason: string;
@@ -11,8 +11,9 @@ export type CreateLogResult =
       id: string;
     };
 
-export async function createLog(
-): Promise<CreateLogResult> {
+export async function createResource(
+  userId: string
+): Promise<CreateResourceResult> {
   const pool = await pg.getPool();
   const id = generate();
   const params = new pg.Params({
@@ -20,47 +21,25 @@ export async function createLog(
     timestamp: Date.now()
   });
 
-  try {
-    await pool.query(
-      `INSERT INTO "log" (${params.columns()}) VALUES (${params.ids()})`,
-      params.values()
-    );
-    return {
-      created: true,
-      id
-    };
-  } catch (ex) {
-    return {
-      created: false,
-      reason: "Could not insert data."
-    };
-  }
-}
+  await pool.query(
+    `INSERT INTO "resource" (${params.columns()}) VALUES (${params.ids()})`,
+    params.values()
+  );
 
-export type AppendToLogResult =
-  | {
-      created: false;
-      reason: string;
-    }
-  | {
-      created: true;
-      id: string;
-    };
+  const permissionParams = new pg.Params({
+    resource_id: id,
+    user_id: userId,
+    read: "Y",
+    write: "Y",
+    execute: "Y",
+    timestamp: Date.now()
+  });
 
-export async function appendToLog() {
-  try {
-    await pool.query(
-      `INSERT INTO "log" (${params.columns()}) VALUES (${params.ids()})`,
-      params.values()
-    );
-    return {
-      created: true,
-      id
-    };
-  } catch (ex) {
-    return {
-      created: false,
-      reason: "Could not insert data."
-    };
-  }
+  // Assign full permissions to the creator.
+  await pool.query(
+    `INSERT INTO "resource_permission" (${permissionParams.columns()}) VALUES (${permissionParams.ids()})`,
+    permissionParams.values()
+  );
+
+  return { created: true as true, id };
 }
