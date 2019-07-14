@@ -8,6 +8,9 @@ import * as db from "./db";
 import * as jwt from "./utils/jwt";
 import * as config from "./config";
 import { IAppConfig, IJWTConfig } from "./types";
+import { appendToLog, createLog } from "./api/log";
+
+// toocloudy.com/8709234443
 
 export async function init(configDir: string) {
   const dbConfig = require(join(configDir, "pg.js"));
@@ -22,8 +25,8 @@ export async function init(configDir: string) {
   // Set up routes
   const router = new Router();
 
-  /* Add a key value pair for a user */
-  router.post(`/blabla`, blabla);
+  router.post(`/logs`, createLog);
+  router.post(`/logs/:id`, appendToLog);
 
   // Start app
   var app = new Koa();
